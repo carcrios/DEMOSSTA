@@ -3,6 +3,24 @@
 Lo más nuevo arriba. Al sacar una versión: `node herramientas/subir-version.js`,
 anotarla aquí y `node herramientas/empaquetar.js`.
 
+## v173 — La guía flotando en cada pantalla y lo que no supo responder
+
+- **Guía flotante**: un botón «?» abajo a la derecha en cada pantalla abre «Pregúntale a la guía» sin salir de lo que se está haciendo.
+  Propone primero las preguntas de esa pantalla. Las respuestas se cargan solo al abrirla (no hace más pesada ninguna pantalla). No sale en Ayuda, en la pantalla de planta ni al imprimir.
+- **Lo que no sabe, se anota**: la pregunta sin respuesta (solo el texto, sin quién la hizo) llega al servidor de la empresa; sin señal espera en el equipo y se envía después.
+- **Consola**: «La guía no supo responder N preguntas», juntando las de todos los clientes, con cuántas veces y «Copiar la lista» para agregar esas respuestas.
+- Corrección: la guía ignoraba mal las palabras vacías («cómo», «se», «de») y una sola palabra parecida podía dar una respuesta equivocada. Ahora no.
+- **Servidor**: hay que actualizarlo (la raíz guarda y entrega las preguntas sin respuesta).
+
+## v172 — Más directo para arrancar un cliente y una guía a la que se le pregunta
+
+- Nueva pantalla **Empezar con un cliente nuevo**: un solo camino en orden, en tres fases (instalar el portal, montar la base del SG-SST y poner a andar el primer mes).
+  Arriba muestra solo el siguiente paso con el porqué (la norma) y el cómo; lo que el portal ve hecho se tacha solo y lo demás se marca con «Ya lo hice».
+- El inicio de administrador y SST cambia «Primeros pasos» por **Tu siguiente paso**: uno solo, más el enlace al camino completo. Desaparece cuando la empresa ya está montada.
+- **Pregúntale a la guía** (en Ayuda): se escribe la pregunta y responde con el manual del portal y la norma colombiana (FURAT, COPASST, estándares de la 0312, alturas, exámenes, estabilidad reforzada…), con enlace al módulo.
+  Sin IA: funciona sin señal y no envía la pregunta a nadie. Si no sabe, lo dice.
+- Solo cambia el sitio; el servidor no cambia.
+
 ## v171 — Informe mensual de actividades
 
 - Nueva pantalla **Informe mensual de actividades** (Paso 4 · Medir y cerrar el mes): elige el mes y junta de todos los servidores

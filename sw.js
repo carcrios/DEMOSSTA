@@ -17,7 +17,7 @@
      la versión más nueva del formulario cuando hay señal).
    ============================================================ */
 
-const CACHE_NAME = 'ssta-portal-v171';
+const CACHE_NAME = 'ssta-portal-v173';
 
 const PAGES = [
   './',
@@ -100,6 +100,7 @@ const STATIC_ASSETS = [
   './equipo.html',
   './bitacora.html',
   './presupuesto.html', './presupuesto.app.js',
+  './empezar.html', './empezar.app.js', './empezar-reglas.js', './guia-preguntas.js',
   './informe-mes.html', './informe-mes.app.js', './informe-mes-reglas.js', './pantalla-planta.html', './pantalla-planta.app.js', './i18n.js', './i18n-en.js',
   './ficha.html',
   './verificar.html',
@@ -179,7 +180,7 @@ const NUCLEO = ['./', './index.html', './preoperacional.html', './reportes.html'
   './personal-autorizado.html', './asistencia.html', './dashboard.html', './ayuda.html', OFFLINE_PAGE,
   './common.css', './common.js', './config.js', './empresa.js', './empresa-motor.js', './dialogo.js', './valida.js', './iconos-emoji.js', './sgsst.css', './sgsst-ui.js',
   './permiso-core.js', './qr.js', './preop-formularios.js', './preop-base.js', './ats-catalogo.js', './ayuda-guias.js', './manifest.json', './icon-192.png', './logo-empresa.svg',
-  './fonts/plex-sans-400.woff2', './fonts/plex-sans-600.woff2',
+  './fonts/plex-sans-400.woff2', './fonts/plex-sans-600.woff2', './empezar-reglas.js', './guia-preguntas.js',
   /* v163: el JS propio de cada pantalla del núcleo (sin esto, ATS y Reportes abrían sin su código en la primera instalación sin señal) */
   './ats.app.js', './reportes.app.js', './registros.js', './cifrado.js', './licencia.js'];
 const RESTO = APP_SHELL.filter((u) => NUCLEO.indexOf(u) === -1 && !/og\.png$|icon-512/.test(u));
