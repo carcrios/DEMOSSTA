@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'sha256-MTRvttUhJ2dcH3k9Eo42U0cBwt5QxP0ZIUhJhdluHpU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://drive.google.com; font-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; media-src 'self' data: blob:; worker-src 'self'; frame-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'sha256-fwSUzjymFII3YLwRz9p7IMgHQsjiB/5nDXF5Bxpul3s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://drive.google.com; font-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; media-src 'self' data: blob:; worker-src 'self'; frame-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0b1424">
 <meta name="robots" content="noindex, nofollow">
@@ -80,6 +80,8 @@ details.c-card summary{cursor:pointer;font-weight:800;font-size:var(--fs-campo);
 .consola .empty{background:rgba(255,255,255,.06);color:var(--n-300);border-radius:var(--r-l);padding:18px;text-align:center;}
 .cli2 .uso{font-size:var(--fs-menor);margin:6px 0 0;color:var(--ink-muted,var(--tenue));}
 .cli2 .uso.sug{color:var(--tinta);background:var(--n-50,#f5f7fa);border-radius:var(--r-m);padding:6px 8px;}
+.gs-l{margin:8px 0 10px;padding-left:20px;line-height:1.5;}
+.gs-l small{color:var(--muted);}
 </style>
 </head>
 <body class="consola">
@@ -104,6 +106,7 @@ details.c-card summary{cursor:pointer;font-weight:800;font-size:var(--fs-campo);
       <button type="button" id="btnRevisar"><span class="ic">↻</span><span><b>Revisar todos los servidores</b><small>Si responden y en qué versión están</small></span></button>
       <a href="asesor.html"><span class="ic">✓</span><span><b>Panel del asesor y tareas</b><small>Tareas, visitas y avance de cada cliente</small></span></a>
     </div>
+    <div id="guiaSin"></div>
     <div class="c-sec"><h2>Clientes</h2><input type="search" id="buscar" placeholder="Buscar cliente"></div>
     <div id="lista"></div>
 
@@ -402,6 +405,7 @@ function pintar(){
     '<div class="c-kpi ' + (caidos ? 'mal' : revisados ? 'ok' : '') + '"><div class="v">' + (revisados ? caidos : '—') + '</div><div class="n">' + (revisados ? 'servidores con problemas' + (ultima ? ' · revisión ' + esc(new Date(ultima).toLocaleString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })) : '') : 'toca «Revisar todos» para probarlos') + '</div></div>' +
     '<div class="c-kpi ' + (desact ? 'pronto' : 'ok') + '"><div class="v">' + desact + '</div><div class="n">servidores por actualizar (portal ' + esc(VERSION_PORTAL_WEB) + ')</div></div>' +
     '<div class="c-kpi ' + (venc ? 'mal' : 'ok') + '"><div class="v">' + venc + '</div><div class="n">tareas vencidas en los clientes</div></div>';
+  guiaSinRespuesta(act);
   const q = UI.norm($('buscar').value).trim();
   const l = rows.filter((x)=> !q || UI.norm(x.titulo + ' ' + (x.resumen.nit || '') + ' ' + (x.resumen.codigo || '') + ' ' + (x.resumen.ciudad || '')).includes(q))
     .sort((a, b)=> (a.estado === 'INACTIVO') - (b.estado === 'INACTIVO') || (est(b) === 'mal') - (est(a) === 'mal') || String(a.titulo).localeCompare(String(b.titulo)));
@@ -431,6 +435,24 @@ function pintar(){
   $('lista').querySelectorAll('[data-rev]').forEach((b)=> b.addEventListener('click', ()=> revisar(de(b.dataset.rev))));
   $('lista').querySelectorAll('[data-mod]').forEach((b)=> b.addEventListener('click', ()=> abrirModulos(de(b.dataset.mod))));
   $('lista').querySelectorAll('[data-edit]').forEach((b)=> b.addEventListener('click', ()=> editarTodo(de(b.dataset.edit))));
+}
+/* v173 · Lo que la guía no supo responder en los portales de tus clientes (la vigilancia lo trae cada mañana).
+   Solo el texto de la pregunta: sin nombre de quien preguntó. Cópialo y pide que se agreguen esas respuestas. */
+function guiaSinRespuesta(act){
+  const t = {};
+  act.forEach((x)=> { let l = []; try { l = JSON.parse(x.resumen.guiaServidor || '[]') || []; } catch (e) { l = []; }
+    l.forEach((p)=> { const k = UI.norm(p.t).trim(); if (!k) return; const o = t[k] = t[k] || { t: p.t, n: 0, u: '', c: [] };
+      o.n += Number(p.n) || 1; if (String(p.u || '') > o.u) o.u = String(p.u || ''); if (o.c.indexOf(x.titulo) === -1) o.c.push(x.titulo); }); });
+  const l = Object.values(t).sort((a, b)=> b.n - a.n || (b.u > a.u ? 1 : -1));
+  if (!l.length) { $('guiaSin').innerHTML = ''; return; }
+  $('guiaSin').innerHTML = '<details class="c-card"><summary><b>La guía no supo responder ' + l.length + ' pregunta' + (l.length === 1 ? '' : 's') + '</b>' +
+    '<small> · agrega esas respuestas y la guía mejora para todos</small></summary><ol class="gs-l">' +
+    l.slice(0, 40).map((p)=> '<li>' + esc(p.t) + ' <small>· ' + p.n + ' vez' + (p.n === 1 ? '' : 'es') + ' · ' + esc(p.c.slice(0, 3).join(', ')) + (p.u ? ' · ' + esc(UI.corta(p.u)) : '') + '</small></li>').join('') +
+    '</ol><button type="button" class="btn ghost" id="gsCopiar">📋 Copiar la lista</button></details>';
+  $('gsCopiar').addEventListener('click', async ()=> {
+    const txt = 'Preguntas que la guía del portal no supo responder:\n' + l.map((p, i)=> (i + 1) + '. ' + p.t + ' (' + p.n + ')').join('\n');
+    try { await navigator.clipboard.writeText(txt); $('gsCopiar').textContent = '✓ Copiada'; } catch (e) { Dialogo.avisar(txt); }
+  });
 }
 /* v169 · Uso por módulo: lo que guarda cada cliente en cada módulo (lo cuenta su servidor; la vigilancia lo trae cada
    mañana). Dice qué usa, qué no, y si el plan le queda grande o pequeño. Solo números: ningún dato de personas. */

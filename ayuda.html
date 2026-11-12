@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'sha256-u0CkDa1uCsNBqUnoPswBusYVzA6azEezPtgAWIPvsvM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://drive.google.com; font-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; media-src 'self' data: blob:; worker-src 'self'; frame-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'sha256-5QkYRL0JWEkC3o8JZz3Zaf6aHdD4E9fJZjr7cFKuAbU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://drive.google.com; font-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; media-src 'self' data: blob:; worker-src 'self'; frame-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#151b24">
 <title>Manual de uso · Portal SSTA</title>
@@ -34,6 +34,15 @@ details.guia[open] summary{border-bottom:1px solid var(--line);}
 .guia .tip{background:var(--n-50);border-radius:var(--r-m);padding:8px 10px;font-size:var(--fs-base);margin:6px 0;}
 .guia .acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
 .faq b{display:block;margin-top:10px;}
+.preg-f{display:flex;gap:8px;}
+.preg-f input{flex:1;min-width:0;padding:11px 12px;border:1.5px solid var(--line);border-radius:var(--r-m);font:inherit;background:var(--bg);color:var(--ink);}
+.preg-f .btn{width:auto;flex:none;margin:0;}
+.preg-sug{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0;margin:8px 0 0;}
+.preg-sug button{border:1px solid var(--line);background:var(--bg);border-radius:var(--r-pill);padding:5px 10px;font:inherit;font-size:var(--fs-menor);cursor:pointer;color:var(--ink);}
+.preg-r{border-top:1px solid var(--line);margin-top:10px;padding-top:10px;}
+.preg-r .q{color:var(--muted);font-size:var(--fs-menor);}
+.preg-r .r{white-space:pre-line;line-height:1.5;margin:4px 0;}
+.preg-r .otra{font-size:var(--fs-menor);margin-top:6px;}
 video{width:100%;max-height:70vh;background:#000;border-radius:var(--r-m);}
 </style>
 </head>
@@ -46,11 +55,18 @@ video{width:100%;max-height:70vh;background:#000;border-radius:var(--r-m);}
     <h1>Manual de uso</h1>
     <p>Cómo se usa cada módulo, paso a paso, con videos cortos</p></div></div>
   </div>
+  <div class="card preg" id="preg">
+    <h2>Pregúntale a la guía</h2>
+    <form id="pregForm" class="preg-f"><input type="search" id="pregTxt" aria-label="Tu pregunta" placeholder="Escribe tu pregunta: ¿por dónde empiezo con un cliente nuevo?" autocomplete="off"><button type="submit" class="btn amber">Preguntar</button></form>
+    <ul class="preg-sug" id="pregSug"></ul>
+    <div id="pregRes" aria-live="polite"></div>
+    <p class="ayuda u-mt8">Responde con el manual del portal y la norma colombiana de SST. Funciona sin señal y no envía tu pregunta a nadie.</p>
+  </div>
   <input type="search" class="buscar" id="buscar" placeholder="Buscar: permiso, inspección, PQRS, clave…">
   <div class="roles" id="roles"></div>
   <div id="lista"></div>
   <div class="card faq" id="faq"></div>
-  <div class="version-portal">Portal SSTA · versión v171</div>
+  <div class="version-portal">Portal SSTA · versión v173</div>
 </div>
 </div>
 <script src="dialogo.js"></script>
@@ -62,6 +78,7 @@ video{width:100%;max-height:70vh;background:#000;border-radius:var(--r-m);}
 <script src="valida.js"></script>
 <script src="sgsst-ui.js"></script>
 <script src="ayuda-guias.js"></script>
+<script src="guia-preguntas.js"></script>
 <script>
 OfflineBanner.init();
 if (typeof UpdateManager !== 'undefined') UpdateManager.init();
@@ -98,6 +115,23 @@ $('buscar').addEventListener('input', pintar);
 document.addEventListener('click', (e)=> { const b = e.target.closest('[data-video]'); if (!b) return;
   const m = UI.modal('<h3>' + esc(b.dataset.t) + '</h3><video controls playsinline preload="metadata" poster="videos/' + encodeURIComponent(b.dataset.video) + '.jpg" src="videos/' + encodeURIComponent(b.dataset.video) + '.mp4"><track kind="captions" srclang="es" label="Español" src="videos/' + encodeURIComponent(b.dataset.video) + '.vtt" default></video><div class="status-msg" data-msg></div><button type="button" class="btn ghost" data-cerrar>Cerrar</button>', true);
   const v = m.el.querySelector('video'); v.addEventListener('error', ()=> { m.el.querySelector('[data-msg]').textContent = navigator.onLine ? 'Este video todavía no está en el sitio (carpeta videos/).' : 'Los videos necesitan señal.'; }); v.play().catch(()=> {}); });
+
+/* v172 · Pregúntale a la guía: busca en las respuestas escritas, las guías visibles y las preguntas frecuentes. */
+GUIA_PREGUNTAS.armar({ guias: GUIAS.filter(guiaVisible), faq: FAQ });
+function responder(q){
+  q = String(q || '').trim(); if (!q) return;
+  const l = GUIA_PREGUNTAS.preguntar(q), x = l[0];
+  if (!x) GUIA_PREGUNTAS.reportar(q);
+  const enl = (a)=> a.map(([t, h])=> '<a class="btn-mini" href="' + esc(h) + '">' + esc(t) + ' →</a>').join(' ');
+  $('pregRes').innerHTML = '<div class="preg-r"><div class="q">Tu pregunta: ' + esc(q) + '</div>' + (x
+    ? '<b>' + esc(x.t) + '</b><div class="r">' + esc(x.r) + '</div>' + enl(x.a) +
+      (l.length > 1 ? '<div class="otra">También puede servirte: ' + l.slice(1).map((y)=> '<button type="button" class="btn-mini gris" data-preg="' + esc(y.t) + '">' + esc(y.t) + '</button>').join(' ') + '</div>' : '')
+    : '<div class="r">No encontré una respuesta para eso. Ya quedó anotada para agregar la respuesta. Mientras tanto, prueba con otras palabras (por ejemplo «permiso», «FURAT», «COPASST») o busca en el manual de abajo.</div>') + '</div>';
+}
+$('pregSug').innerHTML = GUIA_PREGUNTAS.SUGERIDAS.map((t)=> '<li><button type="button" data-preg="' + esc(t) + '">' + esc(t) + '</button></li>').join('');
+$('pregForm').addEventListener('submit', (e)=> { e.preventDefault(); responder($('pregTxt').value); });
+document.addEventListener('click', (e)=> { const b = e.target.closest('[data-preg]'); if (!b) return; $('pregTxt').value = b.dataset.preg; responder(b.dataset.preg); });
+try { const q0 = new URLSearchParams(location.search).get('q'); if (q0) { $('pregTxt').value = q0; responder(q0); } } catch (e) {}
 pintar();
 if (location.hash.length > 1) { const d = document.getElementById('g-' + location.hash.slice(1)); if (d) { d.open = true; d.scrollIntoView(); } }
 </script>
