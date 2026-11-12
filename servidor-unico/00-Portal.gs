@@ -21,7 +21,7 @@
 
 // Los datos de la empresa (nombre, correos, WhatsApp de EPP) están en 01-Empresa.gs:
 // así una actualización del portal puede reemplazar este archivo sin tocarlos.
-const VERSION_PORTAL = 'v171';
+const VERSION_PORTAL = 'v173';
 
 /* ════════════════════════════════════════════════════════════
    De aquí para abajo no hace falta tocar nada.
@@ -58,8 +58,9 @@ function despachar_(e, metodo) {
   const mods = modulosPortal_();
   if (!ruta) {
     if (metodo === 'doPost') { const pr = comandoProveedor_(e); if (pr) return salidaJson_(pr); }
+    if (metodo === 'doPost') { const g = guardarPreguntaGuia_(e); if (g) return salidaJson_(g); }   // v173
     return salidaJson_({ ok: true, servicio: 'Portal SSTA', version: VERSION_PORTAL, empresa: nombreEmpresa_(), modulos: Object.keys(mods), correos: estadoCorreos_(),
-                         capacidades: ['consultaPost', 'modulosProveedor', 'uso'], apagados: modulosApagados_(), uso: usoResumen_(),
+                         capacidades: ['consultaPost', 'modulosProveedor', 'uso', 'guia'], apagados: modulosApagados_(), uso: usoResumen_(), guia: guiaResumen_(),
                          nota: 'Cada módulo responde en esta misma URL terminada en /<módulo>.' });
   }
   if (!mods[ruta]) return salidaJson_({ ok: false, error: 'Módulo desconocido: ' + ruta + '. Disponibles: ' + Object.keys(mods).join(', ') });
@@ -127,6 +128,26 @@ function contarUso_(ruta, e) {
       }
     } finally { lock.releaseLock(); }
   } catch (err) { /* contar el uso nunca impide guardar */ }
+}
+/* v173 · Lo que la guía del portal no supo responder. Solo el texto de la pregunta (recortado), cuántas veces y
+   cuándo fue la última: así quien vende el portal agrega esas respuestas. Sin nombre de quien pregunta. */
+function guardarPreguntaGuia_(e) {
+  const b = cuerpoJson_(e);
+  if (!b || !b.__guia) return null;
+  const t = String(b.__guia.texto || '').replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 140);
+  if (t.length < 4) return { ok: false, error: 'Pregunta vacía.' };
+  const lock = LockService.getScriptLock(); if (!lock.tryLock(2000)) return { ok: false, codigoError: 'TEMPORAL', error: 'Ocupado, se reintenta.' };
+  try {
+    const pr = propiedades_(); let l = []; try { l = JSON.parse(pr.getProperty('GUIA_SIN_RESPUESTA') || '[]'); } catch (x) { l = []; }
+    const k = t.toLowerCase(), hoy = Utilities.formatDate(new Date(), 'America/Bogota', 'yyyy-MM-dd'), x = l.filter(function (y) { return String(y.t).toLowerCase() === k; })[0];
+    if (x) { x.n = (Number(x.n) || 0) + 1; x.u = hoy; } else l.push({ t: t, n: 1, u: hoy });
+    l.sort(function (a, c) { return (c.u > a.u ? 1 : c.u < a.u ? -1 : 0) || c.n - a.n; });
+    pr.setProperty('GUIA_SIN_RESPUESTA', JSON.stringify(l.slice(0, 60)));
+    return { ok: true };
+  } finally { lock.releaseLock(); }
+}
+function guiaResumen_() {
+  try { return JSON.parse(propiedades_().getProperty('GUIA_SIN_RESPUESTA') || '[]').slice(0, 40); } catch (err) { return []; }
 }
 /** { 'yyyy-MM': { módulo: registros } } de los últimos 3 meses. */
 function usoResumen_() {

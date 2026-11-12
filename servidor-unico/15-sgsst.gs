@@ -73,7 +73,7 @@ function modulo_sgsst_() {
    Avisos diarios por correo: se programan solos (v136). Para apagarlos: propiedad AVISOS_APAGADOS = 1.
    ============================================================ */
 
-const VERSION_SGSST = 'v171';   // la muestra el panel del asesor para saber qué clientes están desactualizados
+const VERSION_SGSST = 'v173';   // la muestra el panel del asesor para saber qué clientes están desactualizados
 const API_TOKEN = tokenPortal_();
 const CORREOS_AVISO = correosPortal_();
 // Otras hojas que se copian en el respaldo semanal junto con esta (permisos, ATS,
@@ -211,7 +211,7 @@ const TIPOS_GEN = {
   cliente: { hoja: 'Clientes del asesor', titulo: 'nombre', fecha: 'ultimaVisita', estado: 'estado', responsable: 'contacto', vence: 'proximaVisita',
     campos: ['nombre', 'nit', 'ciudad', 'actividad', 'trabajadores', 'claseRiesgo', 'grupo0312', 'contacto', 'correo', 'telefono', 'sitio', 'codigo', 'ultimaVisita', 'proximaVisita', 'puntaje', 'tareasAbiertas', 'tareasVencidas', 'sincronizado', 'versionServidor', 'estado', 'tareasCerradas',
       // v116: configuración publicada desde la consola y vigilancia diaria de su servidor
-      'publicado', 'modulosOn', 'modulosTotal', 'plan', 'estadoServidor', 'detalleServidor', 'revisadoServidor', 'apagadosServidor', 'usoServidor'] },
+      'publicado', 'modulosOn', 'modulosTotal', 'plan', 'estadoServidor', 'detalleServidor', 'revisadoServidor', 'apagadosServidor', 'usoServidor', 'guiaServidor'] },
   plantillainsp: { hoja: 'Listas de chequeo', titulo: 'nombre', fecha: '', estado: 'activa', responsable: 'reemplaza', vence: '',
     campos: ['nombre', 'icono', 'frecuencia', 'preoperacional', 'reemplaza', 'activa', 'vencimientosTexto', 'itemsTexto'], largos: ['vencimientosTexto', 'itemsTexto'], largoMax: 6000, saltos: true },
   proginsp: { hoja: 'Programa de inspecciones', titulo: 'titulo', fecha: '', estado: 'tipoInspeccion', responsable: 'responsable', vence: '',
@@ -3207,7 +3207,7 @@ function vigilarClientes_(conCorreo) {
   const ahora = new Date().toISOString(), resultados = [], problemas = [];
   lista.forEach(function (x, i) {
     const d = docs[i], k = idx.indexOf(i);
-    let est = 'sin', det = 'Sin servidor registrado', ver = '', apag = null, uso = null;
+    let est = 'sin', det = 'Sin servidor registrado', ver = '', apag = null, uso = null, guia = null;
     if (k !== -1) {
       const res = respuestas[k];
       let j = null; try { j = res ? JSON.parse(res.getContentText()) : null; } catch (e) {}
@@ -3216,6 +3216,7 @@ function vigilarClientes_(conCorreo) {
       else if (j.ok) {
         est = 'ok'; ver = texto_(j.version); det = 'Responde' + (ver ? ' · ' + ver : ''); if (Array.isArray(j.apagados)) apag = j.apagados.slice().sort();
         if (j.uso && typeof j.uso === 'object') uso = JSON.stringify(j.uso).slice(0, 4000);   // v169: registros por módulo y mes
+        if (Array.isArray(j.guia)) { const g = j.guia.slice(0, 30); while (g.length && JSON.stringify(g).length > 3800) g.pop(); guia = JSON.stringify(g); }   // v173: lo que su guía no supo responder
       }
       else if (j.codigoError === 'CLAVE') { est = 'mal'; det = 'No acepta la clave guardada para este cliente'; }
       else if (j.codigoError === 'SESION') { est = 'ok'; det = 'Responde (pide usuario)'; }
@@ -3227,7 +3228,7 @@ function vigilarClientes_(conCorreo) {
     if (est === 'ok' && apag && d.config && d.llaveProveedor && JSON.stringify(apag) !== JSON.stringify(apagadosDe_(d.config))) { reenvio = enviarModulos_(d); if (reenvio.ok) apag = apagadosDe_(d.config); }
     const antes = texto_(x.resumen.estadoServidor);
     guardar_({ action: 'parche', tipo: 'cliente', id: x.id, campos: { estadoServidor: est, detalleServidor: det, revisadoServidor: ahora, versionServidor: ver || texto_(x.resumen.versionServidor), apagadosServidor: apag ? apag.join(',') : texto_(x.resumen.apagadosServidor),
-                         usoServidor: uso || texto_(x.resumen.usoServidor) },
+                         usoServidor: uso || texto_(x.resumen.usoServidor), guiaServidor: guia || texto_(x.resumen.guiaServidor) },
                opId: 'vig-' + x.id + '-' + ahora, _interno: true, _sinVersion: true, _sistema: true });
     const r = { id: x.id, nombre: texto_(x.resumen.nombre), estado: est, detalle: det, version: ver, nuevo: antes !== est || texto_(x.resumen.detalleServidor) !== det, reenvioModulos: reenvio };
     resultados.push(r);
